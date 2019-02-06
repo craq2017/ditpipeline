@@ -16,7 +16,7 @@ stage 'deploy in test'
 openshiftTag(namespace: 'dit-dev',
       sourceStream: 'dit-app',
       sourceTag: 'latest',
-      destinationStream: 'ditapp',
+      destinationStream: 'dit-app',
       destinationTag: 'promoteQA')
 
 openshiftDeploy(namespace: 'dit-test',
