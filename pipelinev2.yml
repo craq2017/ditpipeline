@@ -1,0 +1,63 @@
+node('maven') {
+stage 'build & deploy in dev'
+openshiftBuild(namespace: 'dit-dev',
+        buildConfig: 'dit-app',
+        showBuildLogs: 'true',
+        waitTime: '3000000')
+
+stage 'verify deploy in dev'
+openshiftVerifyDeployment(namespace: 'dit-dev',
+               depCfg: 'dit-app',
+               replicaCount:'1',
+               verifyReplicaCount: 'true',
+               waitTime: '300000')
+
+stage 'deploy in test'
+openshiftTag(namespace: 'dit-dev',
+      sourceStream: 'ditapp',
+      sourceTag: 'latest',
+      destinationStream: 'ditapp',
+      destinationTag: 'promoteQA')
+
+openshiftDeploy(namespace: 'dit-test',
+         deploymentConfig: 'dit-app',
+         waitTime: '300000')
+
+openshiftScale(namespace: 'dit-test',
+         deploymentConfig: 'dit-app',
+         waitTime: '300000',
+         replicaCount: '2')
+stage 'verify deploy in test'
+openshiftVerifyDeployment(namespace: 'dit-test',
+               depCfg: 'dit-app',
+               replicaCount:'2',
+               verifyReplicaCount: 'true',
+               waitTime: '300000')
+
+stage 'deploy to production'
+timeout(time: 2, unit: 'DAYS') {
+    input message: 'Approve to production?'
+}
+
+openshiftTag(namespace: 'dit-dev',
+      sourceStream: 'dit-app',
+      sourceTag: 'latest',
+      destinationStream: 'dit-app',
+      destinationTag: 'promotePRD')
+
+openshiftDeploy(namespace: 'dit-prod',
+         deploymentConfig: 'dit-app',
+         waitTime: '300000')
+
+openshiftScale(namespace: 'dit-prod',
+         deploymentConfig: 'dit-app',
+         waitTime: '300000',
+         replicaCount: '2')
+
+stage 'verify deploy in production'
+openshiftVerifyDeployment(namespace: 'dit-prod',
+               depCfg: 'dit-app',
+               replicaCount:'2',
+               verifyReplicaCount: 'true',
+               waitTime: '300000')
+}
